@@ -10,12 +10,12 @@ security = HTTPBearer()
 
 
 @router.post("")
-async def get_bug_information(
+async def post_transaction(
     query: dict
     # access_token: HTTPAuthorizationCredentials = Security(security),
     # access_token_details: dict = Depends(validate_access_token),
 ):
     """
-    Get Versions of bugs by bug_id
+    Post a new transaction INCOME/OUTCOME
     """
     return "hola mundo"
