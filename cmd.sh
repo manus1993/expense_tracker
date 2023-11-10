@@ -9,7 +9,7 @@ then
 elif [ $1 == "start" ]
 then
     source .env.sh
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --ssl-keyfile .certs/manus-server.key --ssl-certfile .certs/manus-server.crt
 elif [ $1 == "test" ]
 then
     source .env.sh
