@@ -8,4 +8,4 @@ EXPOSE 8000
 COPY . .
 WORKDIR .
 
-CMD ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile", ".certs/manus-server.key", "--ssl-certfile", ".certs/manus-server.crt"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile", ".certs/manus-server.key", "--ssl-certfile", ".certs/manus-server.crt"]
