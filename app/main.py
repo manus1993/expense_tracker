@@ -36,8 +36,8 @@ app = FastAPI(
     version=settings.VERSION,
     # openapi_prefix=settings.SCRIPT_NAME,
     root_path=settings.SCRIPT_NAME,
-    ssl_keyfile=".certs/manus-server.key", 
-    ssl_certfile=".certs/manus-server.crt"
+    # ssl_keyfile=".certs/manus-server.key", 
+    # ssl_certfile=".certs/manus-server.crt"
 )
 '''
 origins = [
