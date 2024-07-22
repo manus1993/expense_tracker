@@ -1,9 +1,12 @@
-from typing import List, Dict, Optional, Union
 from datetime import datetime
+from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field, validator
+
 from app.utils.logger import logger
 
 from .enums import MovementType
+
 
 class TransactionData(BaseModel):
     transaction_id: int

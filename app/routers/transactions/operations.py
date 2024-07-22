@@ -1,8 +1,18 @@
-from app.utils.logger import logger
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from typing import List
-from .models import ParsedData, TransactionData, IncomeDataMonth, ExpenseDataMonth, DebtDataMonth
+
+from dateutil.relativedelta import relativedelta
+
+from app.utils.logger import logger
+
+from .models import (
+    DebtDataMonth,
+    ExpenseDataMonth,
+    IncomeDataMonth,
+    ParsedData,
+    TransactionData,
+)
+
 
 def get_months(initial_date):
     # Ensure initial_date is a datetime object

@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.utils.logger import logger
+
 from app.utils.db import expenses_db
 from app.utils.get_common import (
     CommonMongoGetQueryParams,
@@ -7,11 +7,9 @@ from app.utils.get_common import (
     get_record,
     get_records,
 )
+from app.utils.logger import logger
 
-from .models import (
-    MongoGetQueryParams,
-    MongoSingleGetQueryParams
-)
+from .models import MongoGetQueryParams, MongoSingleGetQueryParams
 
 
 def query_actions(

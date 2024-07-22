@@ -1,32 +1,35 @@
-import pymongo
 import json
-from fastapi import APIRouter, Depends, HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi.responses import HTMLResponse
-from typing import List, Optional, Any
 # from app.utils.logger import logger
 from datetime import datetime
+from typing import Any, List, Optional
+
+import pymongo
+from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.utils.get_common import (  # CommonMongoSingleGetQueryParams,
+    CommonMongoGetQueryParams,
+)
 from app.utils.logger import logger
-from .models import TransactionData, ParsedData
-from .enums import MovementType, GenResponseCode
+
+from .common_functions import (
+    add_movement,
+    get_group_definition,
+    get_last_transaction_id,
+    query_actions,
+    simple_query,
+    update_movement,
+)
+from .enums import GenResponseCode, MovementType
+from .models import ParsedData, TransactionData
+from .operations import parse_data, parse_group_details
+
 # from app.utils.token import validate_access_token
 # from .models import BugQuery, BugResponse
 
-from app.utils.get_common import (
-    CommonMongoGetQueryParams
-    # CommonMongoSingleGetQueryParams,
-)
 
-from .operations import parse_data, parse_group_details
 
-from .common_functions import (
-    query_actions,
-    simple_query,
-    get_group_definition,
-    add_movement,
-    update_movement,
-    get_last_transaction_id
-)
 
 router = APIRouter()
 security = HTTPBearer()
@@ -156,7 +159,7 @@ async def mark_receipt_as_paid(
     return event
 
 @router.post("/create-new-transaction")
-async def mark_receipt_as_paid(
+async def create_new_transaction(
     group_id: str,
     user_id: str,
     month: str,

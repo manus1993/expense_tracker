@@ -2,6 +2,7 @@
 import os
 import random
 import time
+
 from pymongo import MongoClient
 
 ATLAS_DB = os.getenv("ATLAS_DB")

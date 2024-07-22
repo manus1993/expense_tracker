@@ -5,7 +5,6 @@ import traceback
 from typing import Callable
 from uuid import uuid4
 
-
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +15,7 @@ from starlette.types import Message
 from app import settings
 from app.routers.transactions import transactions
 from app.utils.logger import logger
+
 # from app.utils.splunk_logger import splunk_logger
 
 

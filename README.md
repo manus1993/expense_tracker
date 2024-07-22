@@ -7,11 +7,12 @@ Income / Outcome WebApp
 
 ## Launch
 
+Initiate virtualenv
+
 ``` 
 python3 -m venv /Users/cadiazar/virtualenvs/expense_tracker
 source /Users/cadiazar/virtualenvs/expense_tracker/bin/activate  
 ``` 
-
 
 Install requirements in the virtual environment
 
@@ -21,5 +22,11 @@ Install requirements in the virtual environment
     python3 -m pip install -r requirements.txt
 ```
 
+```
 
+Start application (requieres `.env.sh` file)
+
+``` bash
+    ./cmd.sh start
+```
 
