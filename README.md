@@ -29,4 +29,3 @@ Start application (requieres `.env.sh` file)
 ``` bash
     ./cmd.sh start
 ```
-
