@@ -176,10 +176,9 @@ async def create_new_transaction(
         raise HTTPException(status_code=400, detail="Transaction already exists")
     
     transaction = {
-        "transaction_id": get_last_transaction_id() + 1,
+        "transaction_id": get_last_transaction_id(user_id) + 1,
         "user": user_id,
         "group": group_id,
-        "movement_type": "income",
         "amount": 120,
         "name": f"APORTACION {month} {year}",
         "created_at": datetime.now(),

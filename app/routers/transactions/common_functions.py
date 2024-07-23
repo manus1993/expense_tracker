@@ -49,20 +49,25 @@ def simple_query(filter):
 def add_movement(movement_data):
     return expenses_db.Movements.insert_one(movement_data)
 
-def get_last_transaction_id():
+def get_last_transaction_id(user_id: str):
     # Exclude transaction_id == 9999 and transaction_id > 10000
-
     last_transaction_id = expenses_db.Movements.find_one(
         {"transaction_id": {"$nin": [9999], "$lt": 10000}},
         sort=[("transaction_id", -1)],
     )
+    print(last_transaction_id)
+
+    if user_id == last_transaction_id["user"]:
+        return last_transaction_id["transaction_id"] - 1
     return last_transaction_id["transaction_id"]
 
 def update_movement(query):
     expenses_db.Movements.update_one(
         query, 
         {"$set": {
-            "transaction_id": get_last_transaction_id() + 1,
+            "transaction_id": get_last_transaction_id(
+                query["user"]
+            ) + 1,
             "created_at": datetime.now(),
             "category": "MONTLY_INCOME",
             }
