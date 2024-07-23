@@ -10,8 +10,6 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
     steps:
-      - name: Example step
-        run: echo "Secret is ${{ secrets.MY_SECRET }}"
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
