@@ -39,13 +39,11 @@ app = FastAPI(
     # ssl_keyfile=".certs/manus-server.key", 
     # ssl_certfile=".certs/manus-server.crt"
 )
-'''
+
 origins = [
     "http://localhost",
-    "https://scripts.cisco.com",
-    "https://bdb.cisco.com",
-    "https://csone.lightning.force.com",
-    "https://csone.my.salesforce.com",
+    "http://localhost:8000",
+    "http://52.0.141.128:5173"
 ]
 
 app.add_middleware(
@@ -56,7 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+'''
 async def log_request_info(request: Request, request_id: str):
     api_endpoint = None
     request_body = None
