@@ -6,10 +6,10 @@ class MovementType(str, Enum):
     income = "income"
     investment = "investment"
 
+
 class GenResponseCode(str, Enum):
     created = "CREATED"
     deleted = "DELETED"
     edited = "CHANGES_APPLIED"
     failed = "FAILED"
     partial_success = "CREATED_WITH_ERRORS"
-

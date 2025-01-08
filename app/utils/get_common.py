@@ -115,6 +115,7 @@ class CommonMongoSingleGetQueryParams:
 
         return None
 
+
 def get_records(
     db_instance: Database,
     collection_name: str,

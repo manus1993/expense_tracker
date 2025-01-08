@@ -40,14 +40,18 @@ def query_single_action_by_uuid(
     }
     return get_record(expenses_db, "Movements", mongo_params, True)
 
+
 def get_group_definition(filter):
     return expenses_db.Groups.find_one(filter, {"_id": 0})
+
 
 def simple_query(filter):
     return list(expenses_db.Movements.find(filter, {"_id": 0}))
 
+
 def add_movement(movement_data):
     return expenses_db.Movements.insert_one(movement_data)
+
 
 def get_last_transaction_id(user_id: str):
     # Exclude transaction_id == 9999 and transaction_id > 10000
@@ -61,17 +65,17 @@ def get_last_transaction_id(user_id: str):
         return last_transaction_id["transaction_id"] - 1
     return last_transaction_id["transaction_id"]
 
+
 def update_movement(query):
     expenses_db.Movements.update_one(
-        query, 
-        {"$set": {
-            "transaction_id": get_last_transaction_id(
-                query["user"]
-            ) + 1,
-            "created_at": datetime.now(),
-            "category": "MONTLY_INCOME",
+        query,
+        {
+            "$set": {
+                "transaction_id": get_last_transaction_id(query["user"]) + 1,
+                "created_at": datetime.now(),
+                "category": "MONTLY_INCOME",
             }
-        }
+        },
     )
 
     return True

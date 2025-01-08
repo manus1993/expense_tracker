@@ -20,6 +20,7 @@ class TransactionData(BaseModel):
     category: str
     comments: Optional[str] = None
 
+
 class GroupDetailsResult(BaseModel):
     group: str
     size: int
@@ -31,33 +32,43 @@ class GroupDetailsResult(BaseModel):
     total_contributions: int
     total_pending_receipts: int
     users_with_debt: list[str]
+
+
 class TransactionDetail(BaseModel):
     transaction_id: int
     user: str
     name: str
     amount: int
     comments: Optional[str] = None
+
+
 class IncomeDataMonth(BaseModel):
-    datetime: str 
+    datetime: str
     total_income: int
     total_contributions: int
     income_source: List[TransactionDetail]
 
+
 class ExpenseDataMonth(BaseModel):
-    datetime: str 
+    datetime: str
     total_expense: int
     total_expenses: int
     expense_detail: List[TransactionDetail]
 
+
 class DebtDataMonth(BaseModel):
-    datetime: str 
+    datetime: str
     total_debt: int
     total_contributions_in_debt: int
     debt_detail: List[TransactionDetail]
+
+
 class ParsedData(BaseModel):
     income: List[IncomeDataMonth]
     expense: List[ExpenseDataMonth]
     debt: List[DebtDataMonth]
+
+
 class MongoGetQueryParams(BaseModel):
     filter: Optional[Dict] = Field(
         {},
@@ -90,6 +101,7 @@ class MongoGetQueryParams(BaseModel):
                 logger.debug(f"projection was csv, here is what we got: {p}")
                 return p
         return None
+
 
 class MongoSingleGetQueryParams(BaseModel):
     filter: Optional[Dict] = Field(

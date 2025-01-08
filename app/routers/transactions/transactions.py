@@ -1,4 +1,5 @@
 import json
+
 # from app.utils.logger import logger
 from datetime import datetime
 from typing import Any, List, Optional
@@ -29,10 +30,9 @@ from .operations import parse_data, parse_group_details
 # from .models import BugQuery, BugResponse
 
 
-
-
 router = APIRouter()
 security = HTTPBearer()
+
 
 def build_aqe_list_from_mongo_docs(
     document_list: list | pymongo.typings._DocumentType,
@@ -42,6 +42,7 @@ def build_aqe_list_from_mongo_docs(
     """
     ret = [TransactionData(**doc) for doc in document_list]
     return ret
+
 
 @router.get("/parsed-data", response_model=Any)
 async def get_parsed_data(
@@ -66,14 +67,15 @@ async def get_parsed_data(
 
     return {
         "group_details": parse_group_details(group_details, parsed_data),
-        "parsed_data": parsed_data,    
+        "parsed_data": parsed_data,
     }
+
 
 @router.get("", response_model=List[TransactionData])
 async def get_transaction(
     mongo_params: CommonMongoGetQueryParams = Depends(
         CommonMongoGetQueryParams
-    )
+    ),
     # _: dict = Depends(validate_access_token),
 ) -> list[TransactionData]:
     """
@@ -86,6 +88,7 @@ async def get_transaction(
         raise HTTPException(status_code=404, detail="Actions not found")
 
     return build_aqe_list_from_mongo_docs(results)
+
 
 @router.post("/create-receipt-batch")
 async def create_receipt_batch(
@@ -106,16 +109,18 @@ async def create_receipt_batch(
 
     if len(group_details["group_members"]) > 0:
         for member in group_details["group_members"]:
-            if simple_query({
-                "group": group_id,
-                "user": member,
-                "date": date,
-                "movement_type": MovementType.income,
-                "category": "MONTLY_INCOME",
-            }):
+            if simple_query(
+                {
+                    "group": group_id,
+                    "user": member,
+                    "date": date,
+                    "movement_type": MovementType.income,
+                    "category": "MONTLY_INCOME",
+                }
+            ):
                 logger.info(f"Receipt already paid for {member}")
                 continue
-        
+
             transaction = {
                 "transaction_id": 9999,
                 "user": member,
@@ -133,6 +138,7 @@ async def create_receipt_batch(
 
     return "Completado"
 
+
 @router.post("/mark-receipt-as-paid")
 async def mark_receipt_as_paid(
     group_id: str,
@@ -149,14 +155,15 @@ async def mark_receipt_as_paid(
         "category": "VENCIDO",
     }
     logger.info(query)
-    
+
     event = simple_query(query)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     update_movement(query)
 
     return event
+
 
 @router.post("/create-new-transaction")
 async def create_new_transaction(
@@ -173,8 +180,10 @@ async def create_new_transaction(
         "category": "MONTLY_INCOME",
     }
     if simple_query(query):
-        raise HTTPException(status_code=400, detail="Transaction already exists")
-    
+        raise HTTPException(
+            status_code=400, detail="Transaction already exists"
+        )
+
     transaction = {
         "transaction_id": get_last_transaction_id(user_id) + 1,
         "user": user_id,

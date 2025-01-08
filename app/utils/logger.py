@@ -23,4 +23,3 @@ logging.basicConfig(
     # filename="{}-ios-pedia-api.log".format(today),
     # filemode="a",
 )
-
