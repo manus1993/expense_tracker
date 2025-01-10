@@ -14,8 +14,8 @@ from starlette.types import Message
 
 from app import settings
 from app.routers.transactions import transactions
-from app.utils.logger import logger
 
+# from app.utils.logger import logger
 # from app.utils.splunk_logger import splunk_logger
 
 

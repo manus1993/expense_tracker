@@ -95,6 +95,7 @@ async def create_receipt_batch(
     group_id: str,
     month: str,
     year: str,
+    amount: Optional[int] = 120,
 ) -> str:
     """
     Get items from database actions
@@ -125,8 +126,7 @@ async def create_receipt_batch(
                 "transaction_id": 9999,
                 "user": member,
                 "group": group_id,
-                "movement_type": "income",
-                "amount": 120,
+                "amount": amount,
                 "name": f"APORTACION {month} {year}",
                 "created_at": datetime.now(),
                 "date": date,
@@ -154,7 +154,6 @@ async def mark_receipt_as_paid(
         "movement_type": MovementType.income,
         "category": "VENCIDO",
     }
-    logger.info(query)
 
     event = simple_query(query)
     if not event:
@@ -171,31 +170,41 @@ async def create_new_transaction(
     user_id: str,
     month: str,
     year: str,
-) -> str:
+    movement_type: MovementType = MovementType.income,
+    amount: Optional[int] = 120,
+    category: Optional[str] = "MONTLY_INCOME",
+    comments: Optional[str] = None,
+    name: Optional[str] = None,
+) -> TransactionData:
     query = {
         "group": group_id,
         "user": user_id,
         "date": datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d"),
-        "movement_type": MovementType.income,
-        "category": "MONTLY_INCOME",
+        "movement_type": movement_type,
+        "category": category,
     }
+    if name:
+        query["name"] = name
     if simple_query(query):
         raise HTTPException(
             status_code=400, detail="Transaction already exists"
         )
 
+    if not name:
+        name = f"APORTACION {month} {year}"
+
     transaction = {
-        "transaction_id": get_last_transaction_id(user_id) + 1,
+        "transaction_id": get_last_transaction_id(user_id, group_id) + 1,
         "user": user_id,
         "group": group_id,
-        "amount": 120,
-        "name": f"APORTACION {month} {year}",
+        "amount": amount,
+        "name": name,
         "created_at": datetime.now(),
         "date": datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d"),
-        "comments": None,
-        "movement_type": MovementType.income,
-        "category": "MONTLY_INCOME",
+        "comments": comments,
+        "movement_type": movement_type,
+        "category": category,
     }
     add_movement(transaction)
 
-    return "Completado"
+    return TransactionData(**transaction)
