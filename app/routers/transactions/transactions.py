@@ -1,18 +1,16 @@
-import json
-
 # from app.utils.logger import logger
 from datetime import datetime
 from typing import Any, List, Optional
 
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Security
-from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.utils.get_common import (  # CommonMongoSingleGetQueryParams,
     CommonMongoGetQueryParams,
 )
 from app.utils.logger import logger
+from app.utils.token import validate_access_token
 
 from .common_functions import (
     add_movement,
@@ -22,8 +20,8 @@ from .common_functions import (
     simple_query,
     update_movement,
 )
-from .enums import GenResponseCode, MovementType
-from .models import ParsedData, TransactionData
+from .enums import MovementType
+from .models import TransactionData
 from .operations import parse_data, parse_group_details
 
 # from app.utils.token import validate_access_token
@@ -32,6 +30,18 @@ from .operations import parse_data, parse_group_details
 
 router = APIRouter()
 security = HTTPBearer()
+
+
+def validate_scope(
+    group_id: str,
+    access_token_details: dict = Depends(validate_access_token),
+) -> bool:
+    """
+    Validate the scope
+    """
+    if group_id not in access_token_details["scope"]:
+        raise HTTPException(status_code=403, detail="Insufficient scope")
+    return True
 
 
 def build_aqe_list_from_mongo_docs(
@@ -48,18 +58,20 @@ def build_aqe_list_from_mongo_docs(
 async def get_parsed_data(
     group_id: Optional[str] = None,
     user_id: Optional[str] = None,
-    # _: dict = Depends(validate_access_token),
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
 ) -> Any:
     """
     For a given group or user, get the parsed data
     """
-    filter = {"group": group_id}
-    group_details = get_group_definition(filter)
+    validate_scope(group_id, access_token_details)
+    filter_group = {"group": group_id}
+    group_details = get_group_definition(filter_group)
     if not group_details:
         raise HTTPException(status_code=400, detail="group not found")
     if user_id:
-        filter["user"] = user_id
-    data = simple_query(filter)
+        filter_group["user"] = user_id
+    data = simple_query(filter_group)
     if not data:
         raise HTTPException(status_code=404, detail="Data not found")
 
@@ -76,13 +88,13 @@ async def get_transaction(
     mongo_params: CommonMongoGetQueryParams = Depends(
         CommonMongoGetQueryParams
     ),
-    # _: dict = Depends(validate_access_token),
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
 ) -> list[TransactionData]:
     """
     Get items from database actions
     Allow: Mongo Query and Projection
     """
-    logger.info(mongo_params)
     results = query_actions(mongo_params=mongo_params)
     if not results:
         raise HTTPException(status_code=404, detail="Actions not found")
@@ -96,13 +108,16 @@ async def create_receipt_batch(
     month: str,
     year: str,
     amount: Optional[int] = 120,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
 ) -> str:
     """
     Get items from database actions
     Allow: Mongo Query and Projection
     """
-    filter = {"group": group_id}
-    group_details = get_group_definition(filter)
+    validate_scope(group_id, access_token_details)
+    filter_group = {"group": group_id}
+    group_details = get_group_definition(filter_group)
     if not group_details:
         raise HTTPException(status_code=400, detail="group not found")
 
@@ -145,7 +160,10 @@ async def mark_receipt_as_paid(
     user_id: str,
     month: str,
     year: str,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
 ) -> str:
+    validate_scope(group_id, access_token_details)
     query = {
         "transaction_id": 9999,
         "group": group_id,
@@ -175,7 +193,10 @@ async def create_new_transaction(
     category: Optional[str] = "MONTLY_INCOME",
     comments: Optional[str] = None,
     name: Optional[str] = None,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
 ) -> TransactionData:
+    validate_scope(group_id, access_token_details)
     query = {
         "group": group_id,
         "user": user_id,

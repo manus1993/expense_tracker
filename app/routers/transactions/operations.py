@@ -3,8 +3,6 @@ from typing import List
 
 from dateutil.relativedelta import relativedelta
 
-from app.utils.logger import logger
-
 from .models import (
     DebtDataMonth,
     ExpenseDataMonth,

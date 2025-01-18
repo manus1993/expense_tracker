@@ -1,16 +1,9 @@
-import json
 import os
-import time
-import traceback
-from typing import Callable
-from uuid import uuid4
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, RedirectResponse
-from starlette.routing import Match
-from starlette.types import Message
+from fastapi.responses import RedirectResponse
 
 from app import settings
 from app.routers.transactions import transactions

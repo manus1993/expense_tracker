@@ -1,6 +1,4 @@
 import os
-import random
-import time
 
 from pymongo import MongoClient
 
