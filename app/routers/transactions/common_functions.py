@@ -60,7 +60,6 @@ def get_last_transaction_id(
     # Exclude transaction_id == 9999 and transaction_id > 10000
 
     user_cond = "$gt" if user_id == "DEPTO 0" else "$lt"
-
     last_transaction_id = expenses_db.Movements.find_one(
         {
             "transaction_id": {"$nin": [9999], user_cond: 10000},
@@ -69,6 +68,8 @@ def get_last_transaction_id(
         sort=[("transaction_id", -1)],
     )
     if not last_transaction_id:
+        if user_id == "DEPTO 0":
+            return 10000
         return 0
 
     if user_id == last_transaction_id["user"] and user_id != "DEPTO 0":

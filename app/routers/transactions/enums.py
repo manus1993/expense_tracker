@@ -13,3 +13,8 @@ class GenResponseCode(str, Enum):
     edited = "CHANGES_APPLIED"
     failed = "FAILED"
     partial_success = "CREATED_WITH_ERRORS"
+
+
+class IncomeCategory(str, Enum):
+    montly = "MONTLY_INCOME"
+    extraordinary = "EXTRAORDINARY_INCOME"

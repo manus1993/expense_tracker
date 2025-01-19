@@ -20,8 +20,13 @@ from .common_functions import (
     simple_query,
     update_movement,
 )
-from .enums import MovementType
-from .models import TransactionData
+from .enums import IncomeCategory, MovementType
+from .models import (
+    CreateNewBatchTransaction,
+    CreateNewTransaction,
+    MarkReceiptAsPaid,
+    TransactionData,
+)
 from .operations import parse_data, parse_group_details
 
 # from app.utils.token import validate_access_token
@@ -104,10 +109,7 @@ async def get_transaction(
 
 @router.post("/create-receipt-batch")
 async def create_receipt_batch(
-    group_id: str,
-    month: str,
-    year: str,
-    amount: Optional[int] = 120,
+    payload: CreateNewBatchTransaction,
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> str:
@@ -115,37 +117,40 @@ async def create_receipt_batch(
     Get items from database actions
     Allow: Mongo Query and Projection
     """
-    validate_scope(group_id, access_token_details)
-    filter_group = {"group": group_id}
+
+    validate_scope(payload.group_id, access_token_details)
+    filter_group = {"group": payload.group_id}
     group_details = get_group_definition(filter_group)
     if not group_details:
         raise HTTPException(status_code=400, detail="group not found")
 
-    date = datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d")
+    date = datetime.strptime(f"{payload.year}-{payload.month}-01", "%Y-%m-%d")
 
     if len(group_details["group_members"]) > 0:
         for member in group_details["group_members"]:
             if simple_query(
                 {
-                    "group": group_id,
+                    "group": payload.group_id,
                     "user": member,
                     "date": date,
                     "movement_type": MovementType.income,
-                    "category": "MONTLY_INCOME",
+                    "category": payload.category,
                 }
             ):
                 logger.info(f"Receipt already paid for {member}")
                 continue
-
+            name = f"APORTACION {payload.month} {payload.year}"
+            if payload.category == IncomeCategory.extraordinary:
+                name = name + " EXTRAORDINARIA"
             transaction = {
                 "transaction_id": 9999,
                 "user": member,
-                "group": group_id,
-                "amount": amount,
-                "name": f"APORTACION {month} {year}",
+                "group": payload.group_id,
+                "amount": payload.amount,
+                "name": name,
                 "created_at": datetime.now(),
                 "date": date,
-                "comments": None,
+                "comments": payload.comments,
                 "movement_type": MovementType.income,
                 "category": "VENCIDO",
             }
@@ -156,22 +161,28 @@ async def create_receipt_batch(
 
 @router.post("/mark-receipt-as-paid")
 async def mark_receipt_as_paid(
-    group_id: str,
-    user_id: str,
-    month: str,
-    year: str,
+    payload: MarkReceiptAsPaid,
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
-) -> str:
-    validate_scope(group_id, access_token_details)
+) -> TransactionData:
+    validate_scope(payload.group_id, access_token_details)
     query = {
         "transaction_id": 9999,
-        "group": group_id,
-        "user": user_id,
-        "date": datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d"),
+        "group": payload.group_id,
+        "user": payload.user_id,
         "movement_type": MovementType.income,
         "category": "VENCIDO",
     }
+    if payload.name:
+        query["name"] = payload.name
+    elif payload.month and payload.year:
+        query["date"] = datetime.strptime(
+            f"{payload.year}-{payload.month}-01", "%Y-%m-%d"
+        )
+    else:
+        raise HTTPException(
+            status_code=400, detail="Month and year or name are required"
+        )
 
     event = simple_query(query)
     if not event:
@@ -179,52 +190,52 @@ async def mark_receipt_as_paid(
 
     update_movement(query)
 
-    return event
+    return event[0]
 
 
 @router.post("/create-new-transaction")
 async def create_new_transaction(
-    group_id: str,
-    user_id: str,
-    month: str,
-    year: str,
-    movement_type: MovementType = MovementType.income,
-    amount: Optional[int] = 120,
-    category: Optional[str] = "MONTLY_INCOME",
-    comments: Optional[str] = None,
-    name: Optional[str] = None,
+    payload: CreateNewTransaction,
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> TransactionData:
-    validate_scope(group_id, access_token_details)
+    validate_scope(payload.group_id, access_token_details)
     query = {
-        "group": group_id,
-        "user": user_id,
-        "date": datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d"),
-        "movement_type": movement_type,
-        "category": category,
+        "group": payload.group_id,
+        "user": payload.user_id,
+        "date": datetime.strptime(
+            f"{payload.year}-{payload.month}-01", "%Y-%m-%d"
+        ),
+        "movement_type": payload.movement_type,
+        "category": payload.category,
     }
-    if name:
-        query["name"] = name
+    if payload.name:
+        query["name"] = payload.name
     if simple_query(query):
         raise HTTPException(
             status_code=400, detail="Transaction already exists"
         )
 
+    name = payload.name
     if not name:
-        name = f"APORTACION {month} {year}"
+        name = f"APORTACION {payload.month} {payload.year}"
 
     transaction = {
-        "transaction_id": get_last_transaction_id(user_id, group_id) + 1,
-        "user": user_id,
-        "group": group_id,
-        "amount": amount,
+        "transaction_id": get_last_transaction_id(
+            payload.user_id, payload.group_id
+        )
+        + 1,
+        "user": payload.user_id,
+        "group": payload.group_id,
+        "amount": payload.amount,
         "name": name,
         "created_at": datetime.now(),
-        "date": datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d"),
-        "comments": comments,
-        "movement_type": movement_type,
-        "category": category,
+        "date": datetime.strptime(
+            f"{payload.year}-{payload.month}-01", "%Y-%m-%d"
+        ),
+        "comments": payload.comments,
+        "movement_type": payload.movement_type,
+        "category": payload.category,
     }
     add_movement(transaction)
 
