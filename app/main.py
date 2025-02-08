@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from app import settings
+from app.routers.report import report
 from app.routers.transactions import transactions
 
 # from app.utils.logger import logger
@@ -50,6 +51,12 @@ app.add_middleware(
 )
 
 # app.include_router(auth.router, prefix="/v1/auth", tags=["auth"])
+
+app.include_router(
+    report.router,
+    prefix="/v1/report",
+    tags=["report"],
+)
 
 app.include_router(
     transactions.router,
