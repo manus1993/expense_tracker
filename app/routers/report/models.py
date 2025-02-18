@@ -2,6 +2,5 @@ from pydantic import BaseModel
 
 
 class ReceiptsRequest(BaseModel):
-    begin: int
-    end: int
+    transaction_id: int
     group: str

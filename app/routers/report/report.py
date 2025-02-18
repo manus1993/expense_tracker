@@ -1,7 +1,7 @@
 from io import BytesIO
 
 import jinja2
-from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi import APIRouter, Depends, Security
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fpdf import FPDF
@@ -14,7 +14,6 @@ from .models import ReceiptsRequest
 
 router = APIRouter()
 security = HTTPBearer()
-
 
 TEMPLATE = """
 RECIBO DE PAGO DE CUOTA DE MANTENIMIENTO {{ group }}
@@ -29,38 +28,39 @@ Administración {{ group }}
 """  # noqa: E501
 
 
-def get_receipts(request: ReceiptsRequest) -> list:
-    """
-    Get the receipts
-    """
+def get_receipts(transaction_id: str, group: str):
     return list(
         expenses_db.Movements.find(
-            {
-                "transaction_id": {"$gte": request.begin, "$lte": request.end},
-                "group": request.group,
-            }
+            {"transaction_id": transaction_id, "group": group}, {"_id": 0}
         )
     )
 
 
-def create_pdf_file(receipts: list) -> bytes:
+def parse_receipts(transactions: list):
+    amount = 0
+    concept = ""
+    for transaction in transactions:
+        amount += transaction["amount"]
+        concept += transaction["name"] + ", "
+    return {
+        "transaction_id": transactions[0]["transaction_id"],
+        "group": transactions[0]["group"],
+        "user": transactions[0]["user"],
+        "created_at": transactions[0]["created_at"],
+        "amount": amount,
+        "concept": concept,
+    }
+
+
+def create_pdf_file(receipt: str) -> bytes:
     """
     Render the receipts in a PDF file using Jinja2
     """
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=10)
     pdf.set_font("Arial", size=10)
-
-    for i, receipt in enumerate(receipts):
-        if i % 4 == 0:
-            pdf.add_page()
-
-        template = jinja2.Template(TEMPLATE)
-        receipt_text = template.render(receipt)
-
-        pdf.multi_cell(0, 6, receipt_text, border=1, align="L")
-        pdf.ln(3)  # Reduce espaciado entre recibos
-
+    pdf.add_page()
+    pdf.multi_cell(0, 6, receipt, border=1, align="L")
     return pdf.output(dest="S").encode("latin-1")
 
 
@@ -74,11 +74,10 @@ async def download_file(
     Download the receipts
     """
     validate_scope(request.group, access_token_details)
-    receipts = get_receipts(request)
-    if not receipts:
-        raise HTTPException(status_code=404, detail="No receipts found")
-
-    pdf_file = create_pdf_file(receipts)
+    transactions = get_receipts(request.transaction_id, request.group)
+    parsed_receipts = parse_receipts(transactions)
+    template = jinja2.Template(TEMPLATE)
+    pdf_file = create_pdf_file(template.render(parsed_receipts))
     return StreamingResponse(
         BytesIO(pdf_file),
         media_type="application/pdf",

@@ -40,12 +40,16 @@ security = HTTPBearer()
 def validate_scope(
     group_id: str,
     access_token_details: dict = Depends(validate_access_token),
+    admin: bool = False,
 ) -> bool:
     """
     Validate the scope
     """
+
     if group_id not in access_token_details["scope"]:
         raise HTTPException(status_code=403, detail="Insufficient scope")
+    if admin and not access_token_details["token_type"] == "admin":
+        raise HTTPException(status_code=403, detail="Admin token required")
     return True
 
 
@@ -118,7 +122,7 @@ async def create_receipt_batch(
     Allow: Mongo Query and Projection
     """
 
-    validate_scope(payload.group_id, access_token_details)
+    validate_scope(payload.group_id, access_token_details, admin=True)
     filter_group = {"group": payload.group_id}
     group_details = get_group_definition(filter_group)
     if not group_details:
@@ -165,7 +169,7 @@ async def mark_receipt_as_paid(
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> TransactionData:
-    validate_scope(payload.group_id, access_token_details)
+    validate_scope(payload.group_id, access_token_details, admin=True)
     query = {
         "transaction_id": 9999,
         "group": payload.group_id,
@@ -199,7 +203,7 @@ async def create_new_transaction(
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> TransactionData:
-    validate_scope(payload.group_id, access_token_details)
+    validate_scope(payload.group_id, access_token_details, admin=True)
     query = {
         "group": payload.group_id,
         "user": payload.user_id,
