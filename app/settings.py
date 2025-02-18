@@ -6,9 +6,9 @@ from starlette.config import Config
 config = Config()
 
 if os.getenv("ENVIRONMENT") == "shared":
-    root_path = "/api/Expense-Tracker"
+    root_path = "/api"
 elif os.getenv("ENVIRONMENT") == "shared-dev":
-    root_path = "/api/Expense-Tracker-dev"
+    root_path = "/api"
 else:
     root_path = ""
 
