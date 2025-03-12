@@ -73,6 +73,7 @@ def parse_income_data(
                             "name": transaction["name"],
                             "amount": transaction["amount"],
                             "comments": transaction.get("comments", None),
+                            "category": transaction.get("category", None),
                         }
                     )
                     result["total_contributions"] = len(
@@ -108,6 +109,7 @@ def parse_expense_data(
                             "name": transaction["name"],
                             "amount": transaction["amount"],
                             "comments": transaction.get("comments", None),
+                            "category": transaction.get("category", None),
                         }
                     )
                     result["total_expenses"] = len(result["expense_detail"])
@@ -142,6 +144,7 @@ def parse_debt_data(
                             "name": transaction["name"],
                             "amount": transaction["amount"],
                             "comments": transaction.get("comments", None),
+                            "category": transaction.get("category", None),
                         }
                     )
                     result["total_contributions_in_debt"] = len(

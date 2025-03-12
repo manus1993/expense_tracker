@@ -6,11 +6,14 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fpdf import FPDF
 
-from app.routers.transactions.transactions import validate_scope
+from app.routers.transactions.transactions import (
+    get_parsed_data,
+    validate_scope,
+)
 from app.utils.db import expenses_db
 from app.utils.token import validate_access_token
 
-from .models import ReceiptsRequest
+from .models import BalanceRequest, ReceiptsRequest
 
 router = APIRouter()
 security = HTTPBearer()
@@ -25,6 +28,32 @@ Fecha: {{ created_at }}
 
 Atentamente,
 Administración {{ group }}
+"""  # noqa: E501
+
+BALANCE_TEMPLATE = """
+ESTADO DE CUENTA - {{ group }}
+{{ year }}-{{ month }}
+_________________________________________________________________________________
+        Ingresos totales
+            {{ group_details['total_income'] }}
+        Gastos totales
+            {{ group_details['total_expense'] }}
+        Cuotas por cobrar
+            {{ group_details['total_debt'] }}
+        Balance
+            {{ group_details['balance'] }}
+        _____________________________________________
+        Disponible
+            {{ group_details['total_available'] }}
+
+----------- Detalles de gastos del mes ----------{% for category in categories %}
+--------------- {{ category['name'] }}{% for expense in category['expenses'] %}
+    Monto: {{ expense['amount'] }} \t\t - {{ expense['name'] }}{% endfor %}{% endfor %}
+
+--------------- Deptos con adeudo:
+    {{ users_with_debt }}
+
+Atte. Administración {{ group }}
 """  # noqa: E501
 
 
@@ -52,20 +81,55 @@ def parse_receipts(transactions: list):
     }
 
 
-def create_pdf_file(receipt: str) -> bytes:
+def render_receipts(transaction_id_list: list, group: str) -> list:
+    receipts_in_text = []
+    for transaction_id in transaction_id_list:
+        transactions = get_receipts(transaction_id, group)
+        parsed_receipts = parse_receipts(transactions)
+        template = jinja2.Template(TEMPLATE)
+        receipts_in_text.append(template.render(parsed_receipts))
+    return receipts_in_text
+
+
+def create_pdf_file(receipts: list) -> bytes:
     """
-    Render the receipts in a PDF file using Jinja2
+    Render the receipts in a PDF file with three receipts per page.
     """
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=10)
     pdf.set_font("Arial", size=10)
     pdf.add_page()
-    pdf.multi_cell(0, 6, receipt, border=1, align="L")
+
+    receipt_per_page = 3
+    count = 0
+
+    for receipt in receipts:
+        if count and count % receipt_per_page == 0:
+            pdf.add_page()
+
+        pdf.multi_cell(0, 6, receipt, border=1, align="L")
+        pdf.ln(5)  # Adds some space between receipts
+        count += 1
+
+    return pdf.output(dest="S").encode("latin-1")
+
+
+def create_pdf_balance(content: str) -> bytes:
+    """
+    Render the balance in a PDF file.
+    """
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=10)
+    pdf.set_font("Courier", size=8)
+    pdf.add_page()
+
+    pdf.multi_cell(0, 6, content, border=0, align="L")
+
     return pdf.output(dest="S").encode("latin-1")
 
 
 @router.post("/download/receipts")
-async def download_file(
+async def download_receipt(
     request: ReceiptsRequest,
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
@@ -74,10 +138,77 @@ async def download_file(
     Download the receipts
     """
     validate_scope(request.group, access_token_details)
-    transactions = get_receipts(request.transaction_id, request.group)
-    parsed_receipts = parse_receipts(transactions)
-    template = jinja2.Template(TEMPLATE)
-    pdf_file = create_pdf_file(template.render(parsed_receipts))
+    receipts_list = render_receipts(
+        list(range(int(request.start_at), int(request.end_at) + 1)),
+        request.group,
+    )
+    pdf_file = create_pdf_file(receipts_list)
+    return StreamingResponse(
+        BytesIO(pdf_file),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=receipts.pdf"},
+    )
+
+
+def get_categories_with_expenses(expenses):
+    categories = []
+    for expense in expenses:
+        for expense_detail in expense["expense_detail"]:
+            categories.append(expense_detail["category"])
+    expense_per_category = []
+    for category in categories:
+        expenses_found = []
+        expense_per_category.append({"name": category, "expenses": []})
+        for expense in expenses:
+            for expense_detail in expense["expense_detail"]:
+                if expense_detail["category"] == category:
+                    expenses_found.append(expense_detail)
+        expense_per_category[-1]["expenses"] = expenses_found
+
+    return expense_per_category
+
+
+@router.post("/download/balance")
+async def download_balance(
+    request: BalanceRequest,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
+) -> StreamingResponse:
+    """
+    Download the receipts
+    """
+    validate_scope(request.group, access_token_details)
+    data_per_month = await get_parsed_data(
+        group_id=request.group,
+        user_id=None,
+        date=request.year + "-" + request.month,
+        access_token=access_token,
+        access_token_details=access_token_details,
+    )
+
+    general_data = await get_parsed_data(
+        group_id=request.group,
+        user_id=None,
+        date=None,
+        access_token=access_token,
+        access_token_details=access_token_details,
+    )
+    parsed_expenses = data_per_month["parsed_data"].dict()["expense"]
+    user_with_debt = ""
+    for user in general_data["group_details"]["users_with_debt"]:
+        user_with_debt += user.replace("DEPTO", "")
+
+    data = {
+        "group": request.group,
+        "group_details": general_data["group_details"],
+        "users_with_debt": user_with_debt,
+        "year": request.year,
+        "month": request.month,
+        "categories": get_categories_with_expenses(parsed_expenses),
+    }
+    template = jinja2.Template(BALANCE_TEMPLATE)
+    content = template.render(data)
+    pdf_file = create_pdf_balance(content)
     return StreamingResponse(
         BytesIO(pdf_file),
         media_type="application/pdf",

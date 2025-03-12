@@ -11,7 +11,7 @@ expenses_db = expenses_client[ATLAS_DB]
 
 TEMPLATE = """
 RECIBO DE PAGO DE CUOTA DE MANTENIMIENTO
-{{ group }} 
+{{ group }}
 
 Recibí de {{ user }} la cantidad de $ {{ amount }} por concepto de cuota de mantenimiento correspondiente a:
 
@@ -28,8 +28,8 @@ Firma: __________________________
 
 """
 
-def get_receipts(transaction_id: str):
-    return list(expenses_db.Movements.find({"transaction_id": transaction_id}, {"_id": 0}))
+def get_receipts(transaction_id: str, group: str):
+    return list(expenses_db.Movements.find({"transaction_id": transaction_id, 'group':group}, {"_id": 0}))
 
 def parse_receipts(transactions: list):
     amount = 0
@@ -48,10 +48,10 @@ def parse_receipts(transactions: list):
         }
     )
 
-def render_receipts(transaction_id_list: list):
+def render_receipts(transaction_id_list: list, group: str):
     receipts_in_text = ""
     for transaction_id in transaction_id_list:
-        transactions = get_receipts(transaction_id)
+        transactions = get_receipts(transaction_id, group)
         print(transactions)
         parsed_receipts = parse_receipts(transactions)
         template = jinja2.Template(TEMPLATE)
@@ -60,8 +60,9 @@ def render_receipts(transaction_id_list: list):
     return receipts_in_text
 
 if __name__ == "__main__":
+    group = input("Enter the group: ")
     initial = input("Enter the initial transaction_id: ")
     final = input("Enter the final transaction_id: ")
 
     with open("receipt.txt", "w") as f:
-        f.write(render_receipts(list(range(int(initial), int(final) + 1))))
+        f.write(render_receipts(list(range(int(initial), int(final) + 1)), group))

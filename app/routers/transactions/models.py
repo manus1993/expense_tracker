@@ -40,6 +40,7 @@ class TransactionDetail(BaseModel):
     name: str
     amount: float
     comments: Optional[str] = None
+    category: Optional[str] = None
 
 
 class IncomeDataMonth(BaseModel):

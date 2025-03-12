@@ -1,5 +1,5 @@
 # from app.utils.logger import logger
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, List, Optional
 
 import pymongo
@@ -67,6 +67,7 @@ def build_aqe_list_from_mongo_docs(
 async def get_parsed_data(
     group_id: Optional[str] = None,
     user_id: Optional[str] = None,
+    date: Optional[str] = "",
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> Any:
@@ -80,6 +81,12 @@ async def get_parsed_data(
         raise HTTPException(status_code=400, detail="group not found")
     if user_id:
         filter_group["user"] = user_id
+    if date:
+        start_date = datetime.strptime(date, "%Y-%m")
+        end_date = start_date.replace(day=1) + timedelta(days=32)
+        end_date = end_date.replace(day=1)
+        filter_group["created_at"] = {"$gte": start_date, "$lt": end_date}
+    logger.info(f"Filter group: {filter_group}")
     data = simple_query(filter_group)
     if not data:
         raise HTTPException(status_code=404, detail="Data not found")
