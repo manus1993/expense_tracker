@@ -151,21 +151,18 @@ async def download_receipt(
 
 
 def get_categories_with_expenses(expenses):
-    categories = []
+    category_map = {}
     for expense in expenses:
         for expense_detail in expense["expense_detail"]:
-            categories.append(expense_detail["category"])
-    expense_per_category = []
-    for category in categories:
-        expenses_found = []
-        expense_per_category.append({"name": category, "expenses": []})
-        for expense in expenses:
-            for expense_detail in expense["expense_detail"]:
-                if expense_detail["category"] == category:
-                    expenses_found.append(expense_detail)
-        expense_per_category[-1]["expenses"] = expenses_found
+            category = expense_detail["category"]
+            if category not in category_map:
+                category_map[category] = []
+            category_map[category].append(expense_detail)
 
-    return expense_per_category
+    return [
+        {"name": category, "expenses": details}
+        for category, details in category_map.items()
+    ]
 
 
 @router.post("/download/balance")
