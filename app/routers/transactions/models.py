@@ -99,6 +99,13 @@ class CreateNewTransaction(BaseModel):
     name: Optional[str] = None
 
 
+class UpdateTransaction(BaseModel):
+    amount: Optional[float] = None
+    comments: Optional[str] = None
+    name: Optional[str] = None
+    category: Optional[str] = None
+
+
 class MongoGetQueryParams(BaseModel):
     filter: Optional[Dict] = Field(
         {},

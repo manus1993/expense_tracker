@@ -53,6 +53,14 @@ def add_movement(movement_data):
     return expenses_db.Movements.insert_one(movement_data)
 
 
+def update_db(query, update) -> None:
+    expenses_db.Movements.update_one(query, update)
+
+
+def delete_db(query) -> None:
+    expenses_db.Movements.delete_one(query)
+
+
 def get_last_transaction_id(
     user_id: str,
     group: str,

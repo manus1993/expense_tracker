@@ -14,18 +14,21 @@ from app.utils.token import validate_access_token
 
 from .common_functions import (
     add_movement,
+    delete_db,
     get_group_definition,
     get_last_transaction_id,
     query_actions,
     simple_query,
+    update_db,
     update_movement,
 )
-from .enums import IncomeCategory, MovementType
+from .enums import GenResponseCode, IncomeCategory, MovementType
 from .models import (
     CreateNewBatchTransaction,
     CreateNewTransaction,
     MarkReceiptAsPaid,
     TransactionData,
+    UpdateTransaction,
 )
 from .operations import parse_data, parse_group_details
 
@@ -86,7 +89,7 @@ async def get_parsed_data(
         end_date = start_date.replace(day=1) + timedelta(days=32)
         end_date = end_date.replace(day=1)
         filter_group["created_at"] = {"$gte": start_date, "$lt": end_date}
-    logger.info(f"Filter group: {filter_group}")
+
     data = simple_query(filter_group)
     if not data:
         raise HTTPException(status_code=404, detail="Data not found")
@@ -251,3 +254,87 @@ async def create_new_transaction(
     add_movement(transaction)
 
     return TransactionData(**transaction)
+
+
+@router.put("/update-transaction/{group_id}/{transaction_id}")
+async def update_transaction(
+    transaction_id: int,
+    group_id: str,
+    name: str,
+    payload: UpdateTransaction,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
+) -> dict:
+    validate_scope(group_id, access_token_details, admin=True)
+    query = {
+        "transaction_id": transaction_id,
+        "group": group_id,
+    }
+    if name:
+        query["name"] = name
+    event = simple_query(query)
+
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if len(event) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Multiple events found, use name to get a unique event",
+        )
+
+    payload: dict = payload.dict(exclude_unset=True)
+    logger.info(f"Payload: {payload}")
+    if event[0].get("movement_type") == MovementType.income.value and (
+        "name" in payload.keys() or "category" in payload.keys()
+    ):
+        raise HTTPException(
+            status_code=400, detail="Category/name can't be changed in Income"
+        )
+
+    update = {"$set": payload}
+    update_db(query, update)
+
+    return {"status": GenResponseCode.edited}
+
+
+@router.delete("/delete-transaction/{group_id}/{transaction_id}")
+async def delete_transaction(
+    transaction_id: int,
+    group_id: str,
+    name: str,
+    access_token: HTTPAuthorizationCredentials = Security(security),
+    access_token_details: dict = Depends(validate_access_token),
+) -> dict:
+    validate_scope(group_id, access_token_details, admin=True)
+    query = {
+        "transaction_id": transaction_id,
+        "group": group_id,
+    }
+    if name:
+        query["name"] = name
+    event = simple_query(query)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if len(event) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Multiple events found, use name to get a unique event",
+        )
+    print(event[0].get("movement_type"))
+    if event[0].get("movement_type") == MovementType.income.value:
+        logger.info("Changing the transaction to DELETED")
+        update_db(
+            query,
+            {
+                "$set": {
+                    "category": "DELETED",
+                    "amount": 0,
+                    "comments": "TRANSACTION DELETED",
+                }
+            },
+        )
+    else:
+        logger.info("Deleting the transaction")
+        delete_db(query)
+
+    return {"status": "deleted"}
