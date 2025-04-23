@@ -21,8 +21,25 @@ jobs:
     - name: Deploy to EC2
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@ec2-3-140-252-95.us-east-2.compute.amazonaws.com << 'EOF'
+    
+          # Go to project directory
           cd /home/ec2-user/expense_tracker
+    
+          # Stop and remove old container (safe approach)
+          docker container stop expense-api-container || true
+          docker container rm expense-api-container || true
+    
+          # Pull latest code
           git pull origin main
+    
+          # Build latest image
           docker build -t expense-tracker-api .
-          docker run -d --env-file=.env-docker.sh -p 8001:8001 expense-tracker-api
+  
+          # Run new container with env and port mapping
+          docker run -d \
+            --name expense-api-container \
+            --env-file=.env-docker.sh \
+            -p 8001:8001 \
+            expense-tracker-api
+    
         EOF
