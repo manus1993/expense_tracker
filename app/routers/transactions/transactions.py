@@ -88,7 +88,7 @@ async def get_parsed_data(
         start_date = datetime.strptime(date, "%Y-%m")
         end_date = start_date.replace(day=1) + timedelta(days=32)
         end_date = end_date.replace(day=1)
-        filter_group["created_at"] = {"$gte": start_date, "$lt": end_date}
+        filter_group["date"] = {"$gte": start_date, "$lt": end_date}
 
     data = simple_query(filter_group)
     if not data:

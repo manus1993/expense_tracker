@@ -1,7 +1,7 @@
 from io import BytesIO
 
 import jinja2
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fpdf import FPDF
@@ -175,13 +175,18 @@ async def download_balance(
     Download the receipts
     """
     validate_scope(request.group, access_token_details)
-    data_per_month = await get_parsed_data(
-        group_id=request.group,
-        user_id=None,
-        date=request.year + "-" + request.month,
-        access_token=access_token,
-        access_token_details=access_token_details,
-    )
+    data_per_month = {}
+    try:
+        data_per_month = await get_parsed_data(
+            group_id=request.group,
+            user_id=None,
+            date=request.year + "-" + request.month,
+            access_token=access_token,
+            access_token_details=access_token_details,
+        )
+        parsed_expenses = data_per_month["parsed_data"].dict()["expense"]
+    except HTTPException:
+        parsed_expenses = []
 
     general_data = await get_parsed_data(
         group_id=request.group,
@@ -190,7 +195,6 @@ async def download_balance(
         access_token=access_token,
         access_token_details=access_token_details,
     )
-    parsed_expenses = data_per_month["parsed_data"].dict()["expense"]
     user_with_debt = ""
     for user in general_data["group_details"]["users_with_debt"]:
         user_with_debt += user.replace("DEPTO", "")
