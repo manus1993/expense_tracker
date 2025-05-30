@@ -42,9 +42,9 @@ ________________________________________________________________________________
             {{ group_details['total_debt'] }}
         Balance
             {{ group_details['balance'] }}
-        Ingresos del mes:
+        Ingresos correspondientes al mes en curso:
             {{ monthly_income }}
-        Gastos del mes:
+        Gastos del mes en curso:
             {{ monthly_expense }}
         _____________________________________________
         Disponible
