@@ -281,16 +281,7 @@ async def update_transaction(
             status_code=400,
             detail="Multiple events found, use name to get a unique event",
         )
-
     payload: dict = payload.dict(exclude_unset=True)
-    logger.info(f"Payload: {payload}")
-    if event[0].get("movement_type") == MovementType.income.value and (
-        "name" in payload.keys() or "category" in payload.keys()
-    ):
-        raise HTTPException(
-            status_code=400, detail="Category/name can't be changed in Income"
-        )
-
     update = {"$set": payload}
     update_db(query, update)
 
@@ -305,6 +296,9 @@ async def delete_transaction(
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> dict:
+    """
+    Delete a transaction
+    """
     validate_scope(group_id, access_token_details, admin=True)
     query = {
         "transaction_id": transaction_id,
@@ -320,21 +314,7 @@ async def delete_transaction(
             status_code=400,
             detail="Multiple events found, use name to get a unique event",
         )
-    print(event[0].get("movement_type"))
-    if event[0].get("movement_type") == MovementType.income.value:
-        logger.info("Changing the transaction to DELETED")
-        update_db(
-            query,
-            {
-                "$set": {
-                    "category": "DELETED",
-                    "amount": 0,
-                    "comments": "TRANSACTION DELETED",
-                }
-            },
-        )
-    else:
-        logger.info("Deleting the transaction")
-        delete_db(query)
+    logger.info("Deleting the transaction")
+    delete_db(query)
 
     return {"status": "deleted"}
