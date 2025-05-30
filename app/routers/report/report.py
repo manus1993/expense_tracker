@@ -42,9 +42,14 @@ ________________________________________________________________________________
             {{ group_details['total_debt'] }}
         Balance
             {{ group_details['balance'] }}
+        Ingresos del mes:
+            {{ monthly_income }}
+        Gastos del mes:
+            {{ monthly_expense }}
         _____________________________________________
         Disponible
             {{ group_details['total_available'] }}
+
 
 ----------- Detalles de gastos del mes ----------{% for category in categories %}
 --------------- {{ category['name'] }}{% for expense in category['expenses'] %}
@@ -165,6 +170,22 @@ def get_categories_with_expenses(expenses):
     ]
 
 
+def estimate_monthly_income(income):
+    total = 0
+    for inc in income:
+        for income_detail in inc["income_source"]:
+            total += income_detail["amount"]
+    return total
+
+
+def estimate_monthly_expense(expense):
+    total = 0
+    for exp in expense:
+        for expense_detail in exp["expense_detail"]:
+            total += expense_detail["amount"]
+    return total
+
+
 @router.post("/download/balance")
 async def download_balance(
     request: BalanceRequest,
@@ -185,9 +206,13 @@ async def download_balance(
             access_token_details=access_token_details,
         )
         parsed_expenses = data_per_month["parsed_data"].dict()["expense"]
+        parsed_income = data_per_month["parsed_data"].dict()["income"]
     except HTTPException:
         parsed_expenses = []
+        parsed_income = []
 
+    monthly_income = estimate_monthly_income(parsed_income)
+    monthly_expense = estimate_monthly_expense(parsed_expenses)
     general_data = await get_parsed_data(
         group_id=request.group,
         user_id=None,
@@ -206,6 +231,8 @@ async def download_balance(
         "year": request.year,
         "month": request.month,
         "categories": get_categories_with_expenses(parsed_expenses),
+        "monthly_income": monthly_income,
+        "monthly_expense": monthly_expense,
     }
     template = jinja2.Template(BALANCE_TEMPLATE)
     content = template.render(data)
