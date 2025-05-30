@@ -189,6 +189,7 @@ def parse_group_details(group_details: dict, parsed_data: ParsedData) -> dict:
         for debt in month.debt_detail:
             if debt.user not in user_with_debt:
                 user_with_debt.append(debt.user)
+    user_with_debt = sorted(user_with_debt)
     group_details["users_with_debt"] = user_with_debt
 
     return group_details
