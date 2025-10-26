@@ -28,10 +28,7 @@ app = FastAPI(
     title="Expense Tracker APIs",
     description=description,
     version=settings.VERSION,
-    # openapi_prefix=settings.SCRIPT_NAME,
     root_path=settings.SCRIPT_NAME,
-    # ssl_keyfile=".certs/manus-server.key",
-    # ssl_certfile=".certs/manus-server.crt"
 )
 
 origins = [
@@ -67,7 +64,7 @@ app.include_router(
 
 
 @app.get("/")
-async def docs():
+async def docs() -> RedirectResponse:
     """
     API Documentation
     """

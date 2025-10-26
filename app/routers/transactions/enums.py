@@ -16,5 +16,5 @@ class GenResponseCode(str, Enum):
 
 
 class IncomeCategory(str, Enum):
-    montly = "MONTLY_INCOME"
+    monthly = "MONTHLY_INCOME"
     extraordinary = "EXTRAORDINARY_INCOME"

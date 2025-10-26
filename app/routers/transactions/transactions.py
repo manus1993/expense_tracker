@@ -1,6 +1,6 @@
 # from app.utils.logger import logger
 from datetime import datetime, timedelta
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Security
@@ -102,7 +102,7 @@ async def get_parsed_data(
     }
 
 
-@router.get("", response_model=List[TransactionData])
+@router.get("", response_model=list[TransactionData])
 async def get_transaction(
     mongo_params: CommonMongoGetQueryParams = Depends(CommonMongoGetQueryParams),
     access_token: HTTPAuthorizationCredentials = Security(security),

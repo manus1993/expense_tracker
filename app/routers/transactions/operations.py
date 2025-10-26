@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from dateutil.relativedelta import relativedelta
 
@@ -35,7 +34,7 @@ def get_months(initial_date):
     return months
 
 
-def parse_data(data: List[TransactionData], group_details: dict) -> ParsedData:
+def parse_data(data: list[TransactionData], group_details: dict) -> ParsedData:
     return ParsedData(
         income=parse_income_data(data, group_details),
         expense=parse_expense_data(data, group_details),
@@ -44,8 +43,8 @@ def parse_data(data: List[TransactionData], group_details: dict) -> ParsedData:
 
 
 def parse_income_data(
-    data: List[TransactionData], group_details
-) -> List[IncomeDataMonth]:
+    data: list[TransactionData], group_details
+) -> list[IncomeDataMonth]:
     result_list = []
     months = get_months(group_details["created_at"])
     for month in months:
@@ -81,8 +80,8 @@ def parse_income_data(
 
 
 def parse_expense_data(
-    data: List[TransactionData], group_details: dict
-) -> List[ExpenseDataMonth]:
+    data: list[TransactionData], group_details: dict
+) -> list[ExpenseDataMonth]:
     result_list = []
     months = get_months(group_details["created_at"])
     for month in months:
@@ -115,8 +114,8 @@ def parse_expense_data(
 
 
 def parse_debt_data(
-    data: List[TransactionData], group_details: dict
-) -> List[DebtDataMonth]:
+    data: list[TransactionData], group_details: dict
+) -> list[DebtDataMonth]:
     result_list = []
     months = get_months(group_details["created_at"])
     for month in months:
