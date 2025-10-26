@@ -236,7 +236,7 @@ async def create_new_transaction(
 
     transaction = {
         "transaction_id": get_last_transaction_id(
-            payload.user_id, payload.group_id
+            payload.user_id, payload.group_id, movement_type=payload.movement_type
         )
         + 1,
         "user": payload.user_id,

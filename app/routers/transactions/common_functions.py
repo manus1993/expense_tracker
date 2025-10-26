@@ -64,25 +64,44 @@ def delete_db(query) -> None:
 def get_last_transaction_id(
     user_id: str,
     group: str,
+    movement_type: str,  # 'income' or 'expense'
 ):
-    # Exclude transaction_id == 9999 and transaction_id > 10000
+    """
+    Returns the last valid transaction_id for a user and group,
+    considering the following rules:
 
-    user_cond = "$gt" if user_id == "DEPTO 0" else "$lt"
-    last_transaction_id = expenses_db.Movements.find_one(
-        {
-            "transaction_id": {"$nin": [9999], user_cond: 10000},
-            "group": group,
-        },
+    - Pending (transaction_id == 9999) are ignored.
+    - Incomes have ID < 10000.
+    - Expenses have ID > 10000.
+    - 'DEPTO 0' (management) can now have both incomes and expenses.
+    - For 'DEPTO 0' incomes, we look for IDs < 10000 as usual.
+    """
+
+    # Define query range based on movement type
+    if movement_type == "income":
+        id_query = {"$lt": 10000, "$nin": [9999]}
+    elif movement_type == "expense":
+        id_query = {"$gt": 10000, "$nin": [9999]}
+    else:
+        raise ValueError("movement_type must be either 'income' or 'expense'")
+
+    # Fetch last transaction for this group and user type
+    last_tx = expenses_db.Movements.find_one(
+        {"transaction_id": id_query, "group": group},
         sort=[("transaction_id", -1)],
     )
-    if not last_transaction_id:
-        if user_id == "DEPTO 0":
-            return 10000
-        return 0
 
-    if user_id == last_transaction_id["user"] and user_id != "DEPTO 0":
-        return last_transaction_id["transaction_id"] - 1
-    return last_transaction_id["transaction_id"]
+    # Default values when nothing found
+    if not last_tx:
+        return 10000 if movement_type == "expense" else 0
+
+    last_id = last_tx["transaction_id"]
+
+    # For non-management users, ensure continuity (avoid overlaps)
+    if user_id == last_tx.get("user") and user_id != "DEPTO 0":
+        return last_id - 1
+
+    return last_id
 
 
 def update_movement(query):
@@ -91,7 +110,7 @@ def update_movement(query):
         {
             "$set": {
                 "transaction_id": get_last_transaction_id(
-                    query["user"], query["group"]
+                    query["user"], query["group"], movement_type='income'
                 )
                 + 1,
                 "created_at": datetime.now(),
