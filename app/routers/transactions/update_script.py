@@ -13,14 +13,14 @@ def fetch_all():
     return list(expenses_db.Movements.find({}))
 
 
-def fetch_transaction(query: dict = {}):
+def fetch_transaction(query: dict = None):
+    if query is None:
+        query = {}
     return list(expenses_db.Movements.find(query, {"_id": False}))
 
 
 def update_transaction(id):
-    expenses_db.Movements.update_one(
-        {"_id": id}, {"$set": {"user": "manus1993"}}
-    )
+    expenses_db.Movements.update_one({"_id": id}, {"$set": {"user": "manus1993"}})
 
 
 all_transactions = fetch_all()

@@ -6,10 +6,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fpdf import FPDF
 
-from app.routers.transactions.transactions import (
-    get_parsed_data,
-    validate_scope,
-)
+from app.routers.transactions.transactions import get_parsed_data, validate_scope
 from app.utils.db import expenses_db
 from app.utils.token import validate_access_token
 

@@ -7,25 +7,53 @@ Income / Outcome WebApp
 
 ## Launch
 
-Initiate virtualenv
+This project now uses [UV](https://docs.astral.sh/uv/) for dependency management.
 
-``` 
-python3 -m venv /Users/cadiazar/virtualenvs/expense_tracker
-source /Users/cadiazar/virtualenvs/expense_tracker/bin/activate  
-``` 
+### Quick Start with cmd.sh
 
-Install requirements in the virtual environment
+The project includes a convenient script for common development tasks:
 
-``` bash
-    python3 -m pip install --upgrade pip
-    python3 -m pip install -r requirements-dev.txt
-    python3 -m pip install -r requirements.txt
+```bash
+# First time setup
+./cmd.sh setup
+
+# Start development server
+./cmd.sh start
+
+# Format code with ruff
+./cmd.sh format
+
+# Run quality checks (ruff + mypy)
+./cmd.sh qa
+
+# Run tests with coverage
+./cmd.sh test
+
+# Start production server
+./cmd.sh start-prod
 ```
 
+### Manual UV Commands
+
+Create virtual environment and install dependencies:
+
+```bash
+uv sync
 ```
 
-Start application (requieres `.env.sh` file)
+This command automatically:
+- Creates a virtual environment (if one doesn't exist)
+- Installs all project dependencies from `pyproject.toml`
+- Installs development dependencies
 
-``` bash
-    ./cmd.sh start
+Run the development server:
+
+```bash
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Or run any command in the UV environment:
+
+```bash
+uv run python -m app.main
 ```

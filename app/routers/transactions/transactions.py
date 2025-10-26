@@ -104,9 +104,7 @@ async def get_parsed_data(
 
 @router.get("", response_model=List[TransactionData])
 async def get_transaction(
-    mongo_params: CommonMongoGetQueryParams = Depends(
-        CommonMongoGetQueryParams
-    ),
+    mongo_params: CommonMongoGetQueryParams = Depends(CommonMongoGetQueryParams),
     access_token: HTTPAuthorizationCredentials = Security(security),
     access_token_details: dict = Depends(validate_access_token),
 ) -> list[TransactionData]:
@@ -217,18 +215,14 @@ async def create_new_transaction(
     query = {
         "group": payload.group_id,
         "user": payload.user_id,
-        "date": datetime.strptime(
-            f"{payload.year}-{payload.month}-01", "%Y-%m-%d"
-        ),
+        "date": datetime.strptime(f"{payload.year}-{payload.month}-01", "%Y-%m-%d"),
         "movement_type": payload.movement_type,
         "category": payload.category,
     }
     if payload.name:
         query["name"] = payload.name
     if simple_query(query):
-        raise HTTPException(
-            status_code=400, detail="Transaction already exists"
-        )
+        raise HTTPException(status_code=400, detail="Transaction already exists")
 
     name = payload.name
     if not name:
@@ -244,9 +238,7 @@ async def create_new_transaction(
         "amount": payload.amount,
         "name": name,
         "created_at": datetime.now(),
-        "date": datetime.strptime(
-            f"{payload.year}-{payload.month}-01", "%Y-%m-%d"
-        ),
+        "date": datetime.strptime(f"{payload.year}-{payload.month}-01", "%Y-%m-%d"),
         "comments": payload.comments,
         "movement_type": payload.movement_type,
         "category": payload.category,

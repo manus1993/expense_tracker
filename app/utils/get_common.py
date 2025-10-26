@@ -24,13 +24,9 @@ class CommonMongoGetQueryParams:
         limit: Optional[int] = Query(
             200, gt=0, le=2000, description="Number of items to return"
         ),
-        skip: Optional[int] = Query(
-            0, ge=0, description="Number of items to skip"
-        ),
+        skip: Optional[int] = Query(0, ge=0, description="Number of items to skip"),
         sort_key: Optional[str] = Query(None, description="Field to sort on"),
-        sort_ascending: Optional[bool] = Query(
-            False, description="Sort direction"
-        ),
+        sort_ascending: Optional[bool] = Query(False, description="Sort direction"),
     ):
         self.filter = self.validate_filter(filter)
         self.projection = self.validate_projection(projection)
@@ -46,11 +42,11 @@ class CommonMongoGetQueryParams:
         if value:
             try:
                 query_filter = bson_loads(value)
-            except ValueError:
+            except ValueError as exc:
                 raise HTTPException(
                     status_code=422,
                     detail="The provided filter is not valid BSON/JSON format",
-                )
+                ) from exc
 
         return query_filter
 
@@ -84,9 +80,7 @@ class CommonMongoSingleGetQueryParams:
             None,
             description="JSON Mongo Filter compliant with [JSON to BSON format](https://pymongo.readthedocs.io/en/stable/api/bson/json_util.html)",  # noqa: E501
         ),
-        projection: Optional[str] = Query(
-            None, description="CSV of fields to return"
-        ),
+        projection: Optional[str] = Query(None, description="CSV of fields to return"),
     ):
         self.filter = self.validate_filter(filter)
         self.projection = self.validate_projection(projection)
@@ -98,11 +92,11 @@ class CommonMongoSingleGetQueryParams:
         if value:
             try:
                 query_filter = bson_loads(value)
-            except ValueError:
+            except ValueError as exc:
                 raise HTTPException(
                     status_code=422,
                     detail="The provided filter is not valid BSON/JSON format",
-                )
+                ) from exc
 
         return query_filter
 
@@ -128,14 +122,10 @@ def get_records(
     records
     """
     sort_direction = (
-        pymongo.ASCENDING
-        if mongo_params.sort_ascending
-        else pymongo.DESCENDING
+        pymongo.ASCENDING if mongo_params.sort_ascending else pymongo.DESCENDING
     )
     sort_option = (
-        [(mongo_params.sort_key, sort_direction)]
-        if mongo_params.sort_key
-        else None
+        [(mongo_params.sort_key, sort_direction)] if mongo_params.sort_key else None
     )
     results = []
     for entry in db_instance[collection_name].find(

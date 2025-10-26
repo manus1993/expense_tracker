@@ -110,7 +110,7 @@ def update_movement(query):
         {
             "$set": {
                 "transaction_id": get_last_transaction_id(
-                    query["user"], query["group"], movement_type='income'
+                    query["user"], query["group"], movement_type="income"
                 )
                 + 1,
                 "created_at": datetime.now(),

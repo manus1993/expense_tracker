@@ -1,6 +1,0 @@
-black==23.1.0
-isort==5.10.0
-flake8==6.0.0
-pytest
-coverage
-pre-commit

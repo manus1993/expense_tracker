@@ -76,9 +76,7 @@ def parse_income_data(
                             "category": transaction.get("category", None),
                         }
                     )
-                    result["total_contributions"] = len(
-                        result["income_source"]
-                    )
+                    result["total_contributions"] = len(result["income_source"])
     return result_list
 
 
@@ -147,9 +145,7 @@ def parse_debt_data(
                             "category": transaction.get("category", None),
                         }
                     )
-                    result["total_contributions_in_debt"] = len(
-                        result["debt_detail"]
-                    )
+                    result["total_contributions_in_debt"] = len(result["debt_detail"])
     return result_list
 
 
@@ -162,9 +158,7 @@ def parse_group_details(group_details: dict, parsed_data: ParsedData) -> dict:
         [month.total_expense for month in parsed_data.expense]
     )
 
-    group_details["total_debt"] = sum(
-        [month.total_debt for month in parsed_data.debt]
-    )
+    group_details["total_debt"] = sum([month.total_debt for month in parsed_data.debt])
 
     group_details["total_contributions"] = sum(
         [month.total_contributions for month in parsed_data.income]

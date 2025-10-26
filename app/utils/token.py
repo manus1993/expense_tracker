@@ -29,7 +29,7 @@ def validate_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid access token",
         )
-    logger.info("User: %s" % token_details["token_owner"])
+    logger.info("User: {}".format(token_details["token_owner"]))
     return token_details
 
 

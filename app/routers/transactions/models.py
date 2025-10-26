@@ -145,9 +145,7 @@ class MongoSingleGetQueryParams(BaseModel):
         {},
         description="JSON Mongo Filter compliant with [JSON to BSON format](https://pymongo.readthedocs.io/en/stable/api/bson/json_util.html)",  # noqa: E501
     )
-    projection: Optional[str] = Field(
-        None, description="CSV of fields to return"
-    )
+    projection: Optional[str] = Field(None, description="CSV of fields to return")
 
     @validator("projection")
     def validate_projection(cls, value):
