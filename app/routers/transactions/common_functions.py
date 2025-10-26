@@ -114,7 +114,7 @@ def update_movement(query):
                 )
                 + 1,
                 "created_at": datetime.now(),
-                "category": "MONTLY_INCOME",
+                "category": "MONTHLY_INCOME",
             }
         },
     )

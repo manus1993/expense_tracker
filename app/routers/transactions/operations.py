@@ -58,7 +58,7 @@ def parse_income_data(
         )
     for transaction in data:
         if transaction["category"] in [
-            "MONTLY_INCOME",
+            "MONTHLY_INCOME",
             "EXTRAORDINARY_INCOME",
         ]:
             transaction_date = transaction["created_at"].strftime("%Y-%m")
