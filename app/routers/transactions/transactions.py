@@ -93,7 +93,6 @@ async def get_parsed_data(
     data = simple_query(filter_group)
     if not data:
         raise HTTPException(status_code=404, detail="Data not found")
-    logger.info(f"Data found: {data}")
     parsed_data = parse_data(data, group_details)
 
     return {
