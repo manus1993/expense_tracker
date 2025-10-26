@@ -137,7 +137,7 @@ class MongoGetQueryParams(BaseModel):
         return None
 
 
-class MongoAggregateQueryParams(BaseModel):
+class MongoSingleGetQueryParams(BaseModel):
     filter: Optional[dict] = Field(
         {},
         description="JSON Mongo Filter compliant with [JSON to BSON format](https://pymongo.readthedocs.io/en/stable/api/bson/json_util.html)",  # noqa: E501
