@@ -1,63 +1,53 @@
 from datetime import datetime
 
+from pydantic import TypeAdapter
+
 from app.utils.db import expenses_db
 from app.utils.get_common import (
     CommonMongoGetQueryParams,
-    CommonMongoSingleGetQueryParams,
-    get_record,
     get_records,
 )
-from app.utils.logger import logger
 
-from .models import MongoGetQueryParams, MongoSingleGetQueryParams
+from .models import GroupDetails, TransactionData
 
 
 def query_actions(
-    mongo_params: CommonMongoGetQueryParams | MongoGetQueryParams,
-):
+    mongo_params: CommonMongoGetQueryParams,
+) -> list[TransactionData]:
     """
     Query the Overwatching Actions DB by a given filter and projection
     """
     mongo_params.filter = mongo_params.filter or {}
     mongo_params.filter["removed"] = {"$exists": False}
-    return get_records(expenses_db, "Movements", mongo_params, True)
+    results = get_records(expenses_db, "Movements", mongo_params, True)
+    transaction_list_adapter = TypeAdapter(list[TransactionData])
+    return transaction_list_adapter.validate_python(results)
 
 
-def query_single_action_by_uuid(
-    mongo_params: CommonMongoSingleGetQueryParams | MongoSingleGetQueryParams,
-    uuid_val: str,
-):
-    """
-    Query the Overwatching Actions by a given UUID
-    """
-    logger.info(f"Fetching overwatching action {uuid_val}")
-    mongo_params.filter = {
-        **mongo_params.filter,
-        **{
-            "removed": {"$exists": False},
-            "uuid": uuid_val,
-        },
-    }
-    return get_record(expenses_db, "Movements", mongo_params, True)
+def get_group_definition(group_filter: dict) -> GroupDetails | None:
+    result = expenses_db.Groups.find_one(group_filter, {"_id": 0})
+    if result is not None:
+        # Validate result using GroupDetails TypeAdapter
+        group_adapter = TypeAdapter(GroupDetails)
+        return group_adapter.validate_python(result)
+    return None
 
 
-def get_group_definition(filter):
-    return expenses_db.Groups.find_one(filter, {"_id": 0})
+def simple_query(query_filter: dict) -> list[TransactionData]:
+    results = list(expenses_db.Movements.find(query_filter, {"_id": 0}))
+    transaction_list_adapter = TypeAdapter(list[TransactionData])
+    return transaction_list_adapter.validate_python(results)
 
 
-def simple_query(filter):
-    return list(expenses_db.Movements.find(filter, {"_id": 0}))
+def add_movement(movement_data: TransactionData) -> None:
+    expenses_db.Movements.insert_one(movement_data)
 
 
-def add_movement(movement_data):
-    return expenses_db.Movements.insert_one(movement_data)
-
-
-def update_db(query, update) -> None:
+def update_db(query: dict, update: dict) -> None:
     expenses_db.Movements.update_one(query, update)
 
 
-def delete_db(query) -> None:
+def delete_db(query: dict) -> None:
     expenses_db.Movements.delete_one(query)
 
 
@@ -65,7 +55,7 @@ def get_last_transaction_id(
     user_id: str,
     group: str,
     movement_type: str,  # 'income' or 'expense'
-):
+) -> int:
     """
     Returns the last valid transaction_id for a user and group,
     considering the following rules:
@@ -95,7 +85,7 @@ def get_last_transaction_id(
     if not last_tx:
         return 10000 if movement_type == "expense" else 0
 
-    last_id = last_tx["transaction_id"]
+    last_id: int = last_tx["transaction_id"]
 
     # For non-management users, ensure continuity (avoid overlaps)
     if user_id == last_tx.get("user") and user_id != "DEPTO 0":
@@ -104,13 +94,13 @@ def get_last_transaction_id(
     return last_id
 
 
-def update_movement(query):
+def update_movement(query_filter: dict) -> None:
     expenses_db.Movements.update_one(
-        query,
+        query_filter,
         {
             "$set": {
                 "transaction_id": get_last_transaction_id(
-                    query["user"], query["group"], movement_type="income"
+                    query_filter["user"], query_filter["group"], movement_type="income"
                 )
                 + 1,
                 "created_at": datetime.now(),
@@ -118,5 +108,3 @@ def update_movement(query):
             }
         },
     )
-
-    return True

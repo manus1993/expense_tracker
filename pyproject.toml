@@ -7,7 +7,7 @@ name = "expense-tracker"
 version = "1.0.3"
 description = "Expense Tracker API built with FastAPI"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.0",
     "python-dotenv>=1.0.0",
@@ -28,6 +28,8 @@ dev = [
     "mypy",
     "pytest",
     "coverage",
+    "types-python-dateutil",
+    "types-fpdf2",
 ]
 
 [tool.uv]
@@ -36,11 +38,13 @@ dev-dependencies = [
     "mypy",
     "pytest",
     "coverage",
+    "types-python-dateutil",
+    "types-fpdf2",
 ]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -62,7 +66,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

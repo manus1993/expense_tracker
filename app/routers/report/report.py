@@ -59,7 +59,7 @@ Atte. Administración {{ group }}
 """  # noqa: E501
 
 
-def get_receipts(transaction_id: str, group: str):
+def get_receipts(transaction_id: str, group: str) -> list[dict]:
     return list(
         expenses_db.Movements.find(
             {"transaction_id": transaction_id, "group": group}, {"_id": 0}
@@ -67,7 +67,7 @@ def get_receipts(transaction_id: str, group: str):
     )
 
 
-def parse_receipts(transactions: list):
+def parse_receipts(transactions: list) -> dict:
     amount = 0
     concept = ""
     for transaction in transactions:
@@ -113,7 +113,7 @@ def create_pdf_file(receipts: list) -> bytes:
         pdf.ln(5)  # Adds some space between receipts
         count += 1
 
-    return pdf.output(dest="S").encode("latin-1")
+    return bytes(pdf.output(dest="S"))
 
 
 def create_pdf_balance(content: str) -> bytes:
@@ -127,7 +127,7 @@ def create_pdf_balance(content: str) -> bytes:
 
     pdf.multi_cell(0, 6, content, border=0, align="L")
 
-    return pdf.output(dest="S").encode("latin-1")
+    return bytes(pdf.output(dest="S"))
 
 
 @router.post("/download/receipts")
@@ -152,8 +152,8 @@ async def download_receipt(
     )
 
 
-def get_categories_with_expenses(expenses):
-    category_map = {}
+def get_categories_with_expenses(expenses: list) -> list[dict]:
+    category_map: dict[str, list[dict]] = {}
     for expense in expenses:
         for expense_detail in expense["expense_detail"]:
             category = expense_detail["category"]
@@ -167,7 +167,7 @@ def get_categories_with_expenses(expenses):
     ]
 
 
-def estimate_monthly_income(income):
+def estimate_monthly_income(income: list) -> float:
     total = 0
     for inc in income:
         for income_detail in inc["income_source"]:
@@ -175,7 +175,7 @@ def estimate_monthly_income(income):
     return total
 
 
-def estimate_monthly_expense(expense):
+def estimate_monthly_expense(expense: list) -> float:
     total = 0
     for exp in expense:
         for expense_detail in exp["expense_detail"]:
