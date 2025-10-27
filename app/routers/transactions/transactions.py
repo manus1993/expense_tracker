@@ -9,7 +9,7 @@ from app.utils.get_common import (  # CommonMongoSingleGetQueryParams,
     CommonMongoGetQueryParams,
 )
 from app.utils.logger import logger
-from app.utils.token import validate_access_token
+from app.utils.token import validate_access_token, OwnerObject
 
 from .common_functions import (
     add_movement,
@@ -41,16 +41,16 @@ security = HTTPBearer()
 
 def validate_scope(
     group_id: str,
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
     admin: bool = False,
 ) -> bool:
     """
     Validate the scope
     """
 
-    if group_id not in access_token_details["scope"]:
+    if group_id not in access_token_details.scope:
         raise HTTPException(status_code=403, detail="Insufficient scope")
-    if admin and not access_token_details["token_type"] == "admin":
+    if admin and not access_token_details.token_type.value == "admin":
         raise HTTPException(status_code=403, detail="Admin token required")
     return True
 
@@ -61,7 +61,7 @@ async def get_parsed_data(
     user_id: str | None = None,
     date: str | None = "",
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> Any:
     """
     For a given group or user, get the parsed data
@@ -94,7 +94,7 @@ async def get_parsed_data(
 async def get_transaction(
     mongo_params: CommonMongoGetQueryParams = Depends(CommonMongoGetQueryParams),
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> list[TransactionData]:
     """
     Get items from the database (Mongo).
@@ -110,7 +110,7 @@ async def get_transaction(
 async def create_receipt_batch(
     payload: CreateNewBatchTransaction,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> str:
     """
     Get items from database actions
@@ -161,7 +161,7 @@ async def create_receipt_batch(
 async def mark_receipt_as_paid(
     payload: MarkReceiptAsPaid,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> GenResponseCode:
     validate_scope(payload.group_id, access_token_details, admin=True)
     query = {
@@ -192,7 +192,7 @@ async def mark_receipt_as_paid(
 async def create_new_transaction(
     payload: CreateNewTransaction,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> TransactionData:
     validate_scope(payload.group_id, access_token_details, admin=True)
     query = {
@@ -235,7 +235,7 @@ async def update_transaction(
     name: str,
     payload: UpdateTransaction,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> dict:
     validate_scope(group_id, access_token_details, admin=True)
     query = {
@@ -264,7 +264,7 @@ async def delete_transaction(
     group_id: str,
     name: str,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> dict:
     """
     Delete a transaction

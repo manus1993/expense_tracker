@@ -8,7 +8,7 @@ from fpdf import FPDF
 
 from app.routers.transactions.transactions import get_parsed_data, validate_scope
 from app.utils.db import expenses_db
-from app.utils.token import validate_access_token
+from app.utils.token import validate_access_token, OwnerObject
 
 from .models import BalanceRequest, ReceiptsRequest
 
@@ -134,7 +134,7 @@ def create_pdf_balance(content: str) -> bytes:
 async def download_receipt(
     request: ReceiptsRequest,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> StreamingResponse:
     """
     Download the receipts
@@ -187,7 +187,7 @@ def estimate_monthly_expense(expense: list) -> float:
 async def download_balance(
     request: BalanceRequest,
     access_token: HTTPAuthorizationCredentials = Security(security),
-    access_token_details: dict = Depends(validate_access_token),
+    access_token_details: OwnerObject = Depends(validate_access_token),
 ) -> StreamingResponse:
     """
     Download the receipts
