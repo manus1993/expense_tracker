@@ -9,7 +9,7 @@ from app.utils.get_common import (  # CommonMongoSingleGetQueryParams,
     CommonMongoGetQueryParams,
 )
 from app.utils.logger import logger
-from app.utils.token import validate_access_token, OwnerObject
+from app.utils.token import OwnerObject, validate_access_token
 
 from .common_functions import (
     add_movement,

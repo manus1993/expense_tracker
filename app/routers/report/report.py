@@ -8,7 +8,7 @@ from fpdf import FPDF
 
 from app.routers.transactions.transactions import get_parsed_data, validate_scope
 from app.utils.db import expenses_db
-from app.utils.token import validate_access_token, OwnerObject
+from app.utils.token import OwnerObject, validate_access_token
 
 from .models import BalanceRequest, ReceiptsRequest
 

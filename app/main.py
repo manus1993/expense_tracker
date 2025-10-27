@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from app import settings
+from app.routers.incidents import incidents
 from app.routers.report import report
 from app.routers.transactions import transactions
 
@@ -59,6 +60,13 @@ app.include_router(
     transactions.router,
     prefix="/v1/transactions",
     tags=["transactions"],
+    # dependencies=[Depends(validate_access_token)],
+)
+
+app.include_router(
+    incidents.router,
+    prefix="/v1/incidents",
+    tags=["incidents"],
     # dependencies=[Depends(validate_access_token)],
 )
 
