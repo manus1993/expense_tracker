@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import Optional
+from typing import Any
 
 import pymongo
 from bson.json_util import loads as bson_loads
@@ -13,20 +13,20 @@ from .logger import logger
 class CommonMongoGetQueryParams:
     def __init__(
         self,
-        filter: Optional[str] = Query(
+        filter: str | None = Query(
             None,
             description="JSON Mongo Filter compliant with [JSON to BSON format](https://pymongo.readthedocs.io/en/stable/api/bson/json_util.html)",  # noqa: E501
         ),
-        projection: Optional[str] = Query(
+        projection: str | None = Query(
             None,
             description="CSV of fields to return or a JSON projection object",
         ),
-        limit: Optional[int] = Query(
+        limit: int | None = Query(
             200, gt=0, le=2000, description="Number of items to return"
         ),
-        skip: Optional[int] = Query(0, ge=0, description="Number of items to skip"),
-        sort_key: Optional[str] = Query(None, description="Field to sort on"),
-        sort_ascending: Optional[bool] = Query(False, description="Sort direction"),
+        skip: int | None = Query(0, ge=0, description="Number of items to skip"),
+        sort_key: str | None = Query(None, description="Field to sort on"),
+        sort_ascending: bool | None = Query(False, description="Sort direction"),
     ):
         self.filter = self.validate_filter(filter)
         self.projection = self.validate_projection(projection)
@@ -36,7 +36,7 @@ class CommonMongoGetQueryParams:
         self.sort_ascending = sort_ascending
 
     @staticmethod
-    def validate_filter(value: Optional[str]):
+    def validate_filter(value: str | None) -> dict[str, Any] | None:
         query_filter = None
 
         if value:
@@ -51,12 +51,15 @@ class CommonMongoGetQueryParams:
         return query_filter
 
     @staticmethod
-    def validate_projection(value: Optional[str]):
+    def validate_projection(value: str | None) -> dict[str, Any] | None:
         if value:
             try:
                 p = json.loads(value)
-                logger.debug(f"projection was JSON: {p}")
-                return p
+                if isinstance(p, dict):
+                    logger.debug(f"projection was JSON: {p}")
+                    return p
+                else:
+                    logger.debug("Parsed JSON is not a dictionary, treating as CSV")
             except (JSONDecodeError, TypeError):
                 logger.debug("Looks like our projection wasnt JSON")
 
@@ -76,17 +79,17 @@ class CommonMongoGetQueryParams:
 class CommonMongoSingleGetQueryParams:
     def __init__(
         self,
-        filter: Optional[str] = Query(
+        filter: str | None = Query(
             None,
             description="JSON Mongo Filter compliant with [JSON to BSON format](https://pymongo.readthedocs.io/en/stable/api/bson/json_util.html)",  # noqa: E501
         ),
-        projection: Optional[str] = Query(None, description="CSV of fields to return"),
+        projection: str | None = Query(None, description="CSV of fields to return"),
     ):
         self.filter = self.validate_filter(filter)
         self.projection = self.validate_projection(projection)
 
     @staticmethod
-    def validate_filter(value: Optional[str]):
+    def validate_filter(value: str | None) -> dict[str, Any]:
         query_filter = {}
 
         if value:
@@ -101,7 +104,7 @@ class CommonMongoSingleGetQueryParams:
         return query_filter
 
     @staticmethod
-    def validate_projection(value: Optional[str]):
+    def validate_projection(value: str | None) -> list[str] | None:
         if value:
             fields = [e.strip() for e in value.split(",") if e.strip()]
             if fields:
@@ -115,7 +118,7 @@ def get_records(
     collection_name: str,
     mongo_params: CommonMongoGetQueryParams,
     exclude_id: bool = True,
-) -> list:
+) -> list[dict[str, Any]]:
     """
     Get records from a mongo db using the common collection
     level options and removing the `_id` ObjectId from the
@@ -148,7 +151,7 @@ def get_record(
     collection_name: str,
     mongo_params: CommonMongoSingleGetQueryParams,
     exclude_id: bool = True,
-) -> dict:
+) -> dict[str, Any] | None:
     """
     Get a single record from a mongo db using the common collection
     level options and removing the `_id` ObjectId from the

@@ -16,11 +16,19 @@ elif [ "$1" == "format" ]; then
     uv run ruff check --fix app
     echo "✅ Code formatted successfully."
 elif [ "$1" == "qa" ]; then
-    echo "Running quality assurance checks..."
-    uv run ruff check app
-    uv run ruff format --check app
-    uv run mypy app
-    echo "✅ All QA checks passed."
+    if [ $# -eq 2 ]; then
+        echo "Running quality assurance checks on $2..."
+        uv run ruff check "$2"
+        uv run ruff format --check "$2"
+        uv run mypy "$2"
+        echo "✅ QA checks passed for $2."
+    else
+        echo "Running quality assurance checks..."
+        uv run ruff check app
+        uv run ruff format --check app
+        uv run mypy app
+        echo "✅ All QA checks passed."
+    fi
 elif [ "$1" == "test" ]; then
     echo "Running tests with coverage..."
     uv run coverage run --source ./app -m pytest --disable-warnings --junit-xml=pytest-report.xml
@@ -49,11 +57,11 @@ else
     echo "Unknown command: $1"
     echo ""
     echo "Available commands:"
-    echo "  setup      - Set up development environment with UV"
-    echo "  format     - Format code with ruff"
-    echo "  qa         - Run quality assurance checks (ruff + mypy)"
-    echo "  test       - Run tests with coverage reporting"
-    echo "  start      - Start FastAPI development server"
-    echo "  tag-deploy - Create and deploy a new version tag"
+    echo "  setup         - Set up development environment with UV"
+    echo "  format        - Format code with ruff"
+    echo "  qa [file]     - Run quality assurance checks (ruff + mypy). Optionally specify a single file."
+    echo "  test          - Run tests with coverage reporting"
+    echo "  start         - Start FastAPI development server"
+    echo "  tag-deploy    - Create and deploy a new version tag"
     exit 1
 fi
