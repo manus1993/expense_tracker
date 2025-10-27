@@ -1,9 +1,9 @@
 from datetime import datetime
 from uuid import uuid4
 
-from .enums import IncidentType, IncidentStatus
-
 from pydantic import BaseModel, Field
+
+from .enums import IncidentStatus, IncidentType
 
 
 class IncidentData(BaseModel):

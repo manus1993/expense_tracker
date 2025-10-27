@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer
 
 from app.utils.get_common import CommonMongoGetQueryParams
 from app.utils.logger import logger
-from app.utils.token import validate_access_token, OwnerObject
+from app.utils.token import OwnerObject, validate_access_token
 
 from .common_functions import (
     add_incident,
@@ -54,18 +54,18 @@ async def get_incidents(
     Only admin users can access this endpoint.
     """
     validate_scope(group_id, access_token_details, admin=True)
-    
+
     # Build filter
     filter_dict = {"group": group_id}
     if user_id:
         filter_dict["submitter"] = user_id
-    
+
     # Add filter to mongo_params
     if mongo_params.filter:
         mongo_params.filter.update(filter_dict)
     else:
         mongo_params.filter = filter_dict
-    
+
     try:
         incidents = query_incidents(mongo_params)
         logger.info("Retrieved %d incidents for group %s", len(incidents), group_id)
@@ -85,7 +85,7 @@ async def create_incident(
     solved_by defaults to empty string.
     """
     validate_scope(payload.group, access_token_details, admin=True)
-    
+
     try:
         incident = IncidentData(
             incident_type=payload.incident_type,
@@ -93,10 +93,12 @@ async def create_incident(
             message=payload.message,
             submitter=payload.submitter,
             group=payload.group,
-            solved_by=""  # Default value
+            solved_by="",  # Default value
         )
         add_incident(incident)
-        logger.info("Created incident %s for group %s", incident.incident_id, payload.group)
+        logger.info(
+            "Created incident %s for group %s", incident.incident_id, payload.group
+        )
         return incident
     except Exception as e:
         logger.error("Error creating incident: %s", str(e))
@@ -115,33 +117,38 @@ async def update_incident(
     Only admin users can access this endpoint.
     """
     validate_scope(group_id, access_token_details, admin=True)
-    
+
     # Check if incident exists
     existing_incident = get_incident_by_id(incident_id, group_id)
     if not existing_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    
+
     # Build update dictionary with only non-None values
     update_dict = {}
     if payload.incident_type is not None:
-        update_dict["incident_type"] = payload.incident_type
+        update_dict["incident_type"] = payload.incident_type.value
     if payload.incident_status is not None:
-        update_dict["incident_status"] = payload.incident_status
+        update_dict["incident_status"] = payload.incident_status.value
     if payload.message is not None:
         update_dict["message"] = payload.message
-    
+
     if not update_dict:
         raise HTTPException(status_code=400, detail="No valid fields to update")
-    
+
     try:
         query = {"incident_id": incident_id, "group": group_id}
         modified_count = update_incident_db(query, update_dict)
-        
+
         if modified_count == 0:
-            raise HTTPException(status_code=404, detail="Incident not found or no changes made")
-        
+            raise HTTPException(
+                status_code=404, detail="Incident not found or no changes made"
+            )
+
         logger.info("Updated incident %s in group %s", incident_id, group_id)
-        return {"message": "Incident updated successfully", "modified_count": modified_count}
+        return {
+            "message": "Incident updated successfully",
+            "modified_count": modified_count,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -160,21 +167,24 @@ async def delete_incident(
     Only admin users can access this endpoint.
     """
     validate_scope(group_id, access_token_details, admin=True)
-    
+
     # Check if incident exists
     existing_incident = get_incident_by_id(incident_id, group_id)
     if not existing_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    
+
     try:
         query = {"incident_id": incident_id, "group": group_id}
         modified_count = delete_incident_db(query)
-        
+
         if modified_count == 0:
             raise HTTPException(status_code=404, detail="Incident not found")
-        
+
         logger.info("Deleted incident %s from group %s", incident_id, group_id)
-        return {"message": "Incident deleted successfully", "modified_count": modified_count}
+        return {
+            "message": "Incident deleted successfully",
+            "modified_count": modified_count,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -194,31 +204,38 @@ async def update_incident_status(
     Only admin users can access this endpoint.
     """
     validate_scope(group_id, access_token_details, admin=True)
-    
+
     # Check if incident exists
     existing_incident = get_incident_by_id(incident_id, group_id)
     if not existing_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    
+
     try:
         query = {"incident_id": incident_id, "group": group_id}
-        update_dict = {"incident_status": payload.incident_status}
+        update_dict = {"incident_status": payload.incident_status.value}
         modified_count = update_incident_db(query, update_dict)
-        
+
         if modified_count == 0:
             raise HTTPException(status_code=404, detail="Incident not found")
-        
-        logger.info("Updated incident %s status to %s in group %s", incident_id, payload.incident_status, group_id)
+
+        logger.info(
+            "Updated incident %s status to %s in group %s",
+            incident_id,
+            payload.incident_status,
+            group_id,
+        )
         return {
-            "message": "Incident status updated successfully", 
+            "message": "Incident status updated successfully",
             "incident_status": payload.incident_status,
-            "modified_count": modified_count
+            "modified_count": modified_count,
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error updating incident status: %s", str(e))
-        raise HTTPException(status_code=500, detail="Error updating incident status") from e
+        raise HTTPException(
+            status_code=500, detail="Error updating incident status"
+        ) from e
 
 
 @router.patch("/{group_id}/{incident_id}/solve")
@@ -233,36 +250,38 @@ async def solve_incident(
     Only admin users can access this endpoint.
     """
     validate_scope(group_id, access_token_details, admin=True)
-    
+
     # Check if incident exists
     existing_incident = get_incident_by_id(incident_id, group_id)
     if not existing_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    
+
     # Check if already solved
     if existing_incident.solved_by:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Incident already solved by {existing_incident.solved_by}"
+            status_code=400,
+            detail=f"Incident already solved by {existing_incident.solved_by}",
         )
-    
+
     try:
         query = {"incident_id": incident_id, "group": group_id}
         update_dict = {
             "solved_by": payload.solved_by,
-            "incident_status": IncidentStatus.RESOLVED
+            "incident_status": IncidentStatus.RESOLVED.value,
         }
         modified_count = update_incident_db(query, update_dict)
-        
+
         if modified_count == 0:
             raise HTTPException(status_code=404, detail="Incident not found")
-        
-        logger.info("Marked incident %s as solved by %s", incident_id, payload.solved_by)
+
+        logger.info(
+            "Marked incident %s as solved by %s", incident_id, payload.solved_by
+        )
         return {
-            "message": "Incident marked as solved successfully", 
+            "message": "Incident marked as solved successfully",
             "solved_by": payload.solved_by,
             "incident_status": IncidentStatus.RESOLVED,
-            "modified_count": modified_count
+            "modified_count": modified_count,
         }
     except HTTPException:
         raise

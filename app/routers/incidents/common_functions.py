@@ -16,7 +16,7 @@ def query_incidents(
     Query the Incidents DB by a given filter and projection
     """
     mongo_params.filter = mongo_params.filter or {}
-    mongo_params.filter["removed"] = {"$exists": False}  # Only get non-deleted incidents
+    mongo_params.filter["removed"] = {"$exists": False}
     results = get_records(expenses_db, "Incidents", mongo_params, True)
     incident_list_adapter = TypeAdapter(list[IncidentData])
     return incident_list_adapter.validate_python(results)
@@ -62,7 +62,7 @@ def get_incident_by_id(incident_id: str, group: str) -> IncidentData | None:
     """
     result = expenses_db.Incidents.find_one(
         {"incident_id": incident_id, "group": group, "removed": {"$exists": False}},
-        {"_id": 0}
+        {"_id": 0},
     )
     if result:
         incident_adapter = TypeAdapter(IncidentData)
