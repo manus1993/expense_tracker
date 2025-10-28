@@ -56,7 +56,7 @@ async def get_incidents(
     validate_scope(group_id, access_token_details, admin=True)
 
     # Build filter
-    filter_dict = {"group": group_id}
+    filter_dict = {"group_id": group_id}
     if user_id:
         filter_dict["submitter"] = user_id
 
