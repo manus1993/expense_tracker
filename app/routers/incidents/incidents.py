@@ -84,7 +84,7 @@ async def create_incident(
     Create a new incident. Only admin users can access this endpoint.
     solved_by defaults to empty string.
     """
-    validate_scope(payload.group, access_token_details, admin=True)
+    validate_scope(payload.group_id, access_token_details, admin=True)
 
     try:
         incident = IncidentData(
@@ -92,12 +92,12 @@ async def create_incident(
             incident_status=payload.incident_status,
             message=payload.message,
             submitter=payload.submitter,
-            group=payload.group,
+            group_id=payload.group_id,
             solved_by="",  # Default value
         )
         add_incident(incident)
         logger.info(
-            "Created incident %s for group %s", incident.incident_id, payload.group
+            "Created incident %s for group %s", incident.incident_id, payload.group_id
         )
         return incident
     except Exception as e:
