@@ -40,7 +40,7 @@ def simple_query(query_filter: dict) -> list[TransactionData]:
 
 
 def add_movement(movement_data: TransactionData) -> None:
-    expenses_db.Movements.insert_one(movement_data)
+    expenses_db.Movements.insert_one(movement_data.model_dump())
 
 
 def update_db(query: dict, update: dict) -> None:
