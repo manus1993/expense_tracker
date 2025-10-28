@@ -14,7 +14,7 @@ class IncidentData(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     submitter: str
     solved_by: str = ""
-    group: str
+    group_id: str
 
 
 class CreateIncident(BaseModel):
@@ -22,7 +22,7 @@ class CreateIncident(BaseModel):
     incident_status: IncidentStatus = IncidentStatus.REPORTED
     message: str
     submitter: str
-    group: str
+    group_id: str
 
 
 class UpdateIncident(BaseModel):
