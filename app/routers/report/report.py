@@ -218,7 +218,7 @@ async def download_balance(
         access_token_details=access_token_details,
     )
     user_with_debt = ""
-    for user in general_data["group_details"]["users_with_debt"]:
+    for user in general_data["group_details"].users_with_debt or []:
         user_with_debt += user.replace("DEPTO", "")
 
     data = {
